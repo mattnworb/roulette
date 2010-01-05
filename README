@@ -1,10 +1,15 @@
-nA simple class which spins a roulette wheel a configurable amount of times, 
-prints the results, and counts the number of streaks in the results.
+A simple class which spins a roulette wheel a configurable amount of times, 
+prints the results, and counts the number of streaks in the results. The class
+prints results with using java.util.Random as the random number generator
+as well as with java.security.SecureRandom.
 
 To compile:
 	mvn compile
 	
 To run:
+	mvn exec:java -Dexec.mainClass=brown.roulette.Roulette
+	(to run the default 1000 trials) 
+or
 	mvn exec:java -Dexec.mainClass=brown.roulette.Roulette -Dexec.args=<SPINS>
 	
 	where <SPINS> is a valid integer (i.e. less than 2147483647)
