@@ -7,7 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import org.apache.log4j.Logger;
+import org.perf4j.StopWatch;
 
 /**
  * @author Matt Brown
@@ -28,11 +31,19 @@ public class Roulette {
 
 	private Random rand = new Random();
 
+	private int numBlack;
+
+	private int numRed;
+
+	private int numGreen;
+
 	public Roulette(int numBlack, int numRed, int numGreen) {
 
-		final int slots = numBlack + numRed + numGreen;
+		this.numBlack = numBlack;
+		this.numRed = numRed;
+		this.numGreen = numGreen;
 
-		this.wheel = new Color[slots];
+		this.wheel = new Color[numBlack + numRed + numGreen];
 
 		// alternate black and red
 		for (int i = 0; i < (numBlack + numRed); i++) {
@@ -44,12 +55,29 @@ public class Roulette {
 			}
 		}
 		// fill the remaining slots with green
-		Arrays.fill(wheel, numBlack + numRed, slots, Color.GREEN);
+		Arrays.fill(wheel, numBlack + numRed, wheel.length, Color.GREEN);
+	}
+
+	public int getNumOfSlots(Color c) {
+		switch (c) {
+			case BLACK:
+				return numBlack;
+			case GREEN:
+				return numGreen;
+			case RED:
+				return numRed;
+			default:
+				throw new IllegalArgumentException("Unknown color");
+		}
+	}
+
+	public int getSlots() {
+		return this.wheel.length;
 	}
 
 	public void printWheel(PrintStream out) {
 		for (int i = 0; i < wheel.length; i++) {
-			out.format("Slot %d: %s", Integer.valueOf(i + 1), wheel[i]);
+			out.printf("Slot %d: %s", Integer.valueOf(i + 1), wheel[i]);
 		}
 	}
 
@@ -65,7 +93,7 @@ public class Roulette {
 	private final static int NUM_GREEN = 2;
 
 	public static void main(String[] args) {
-		Roulette r = new Roulette(NUM_BLACK, NUM_RED, NUM_GREEN);
+		Roulette wheel = new Roulette(NUM_BLACK, NUM_RED, NUM_GREEN);
 
 		int testRuns = 1000;
 		if (args.length > 0) {
@@ -77,17 +105,64 @@ public class Roulette {
 			}
 		}
 
+		List<Color> results = spinWheel(wheel, testRuns);
+
+		countAndPrintStreaks(results);
+	}
+
+	private static List<Color> spinWheel(Roulette wheel, int testRuns) {
+		StopWatch stopWatch = new StopWatch("spinning wheel");
+		stopWatch.start();
+
 		List<Color> results = new ArrayList<Color>(testRuns);
 		for (long i = 0; i < testRuns; i++) {
-			results.add(r.spin());
+			results.add(wheel.spin());
+		}
+		stopWatch.stop();
+
+		// count results by color
+		Map<Color, Integer> colorCount = new HashMap<Color, Integer>();
+		for (Color col : Color.values()) {
+			colorCount.put(col, 0);
+		}
+		for (Color col : results) {
+			colorCount.put(col, colorCount.get(col) + 1);
 		}
 
-		System.out.println("Results: " + results);
+		System.out.printf("Spun wheel %d times (took %dms)\n\n", testRuns, stopWatch.getElapsedTime());
+
+		for (Color col : Color.values()) {
+			Integer count = colorCount.get(col);
+			float colorPct = (float) wheel.getNumOfSlots(col) / wheel.getSlots();
+			System.out.printf("%5s: %5d times (expected %7.3f)\n", col, count, colorPct * results.size());
+		}
+		System.out.println();
+
+		return results;
+	}
+
+	private static void countAndPrintStreaks(List<Color> results) {
+
+		StopWatch stopWatch = new StopWatch("counting streaks");
+		stopWatch.start();
 
 		Map<Integer, Integer> streaks = countStreaks(results);
 
-		for (Map.Entry<Integer, Integer> entry : streaks.entrySet()) {
-			System.out.format("Number of occurences of length %2d: %5d\n", entry.getKey(), entry.getValue());
+		// wrap the map in a sortedMap and fill in any gaps for prettier output
+		SortedMap<Integer, Integer> sortedStreaks = new TreeMap<Integer, Integer>(streaks);
+		for (Integer i = 1; i < sortedStreaks.lastKey(); i++) {
+			if (!sortedStreaks.containsKey(i)) {
+				sortedStreaks.put(i, 0);
+			}
+		}
+
+		stopWatch.stop();
+
+		System.out.printf("Max of streak: %d (took %dms to count)\n", sortedStreaks.lastKey(), stopWatch
+			.getElapsedTime());
+
+		for (Map.Entry<Integer, Integer> entry : sortedStreaks.entrySet()) {
+			System.out.printf("Streaks of length %2d: %5d\n", entry.getKey(), entry.getValue());
 		}
 	}
 
