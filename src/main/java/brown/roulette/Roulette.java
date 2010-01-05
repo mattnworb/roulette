@@ -43,7 +43,7 @@ public class Roulette {
 				wheel[i] = Color.RED;
 			}
 		}
-		// fill the last slots with green
+		// fill the remaining slots with green
 		Arrays.fill(wheel, numBlack + numRed, slots, Color.GREEN);
 	}
 
@@ -51,7 +51,6 @@ public class Roulette {
 		for (int i = 0; i < wheel.length; i++) {
 			out.format("Slot %d: %s", Integer.valueOf(i + 1), wheel[i]);
 		}
-
 	}
 
 	public Color spin() {
@@ -85,119 +84,46 @@ public class Roulette {
 
 		System.out.println("Results: " + results);
 
-		// find longest streak
-		final Streak longestStreak = findLongestStreak(results);
-		System.out.println("Longest streak: " + longestStreak);
-
-		// dumpStreakElements(results, streak);
-
-		// count all streaks less than the longest
-		final int longestLength = longestStreak.getLength();
-
-		// keep track of the streaks in a map
-		Map<Integer, Integer> streaks = new HashMap<Integer, Integer>(longestLength);
-		for (int i = longestLength; i > 0; i--) {
-			streaks.put(i, countOccurencesOfLength(results, i));
-		}
+		Map<Integer, Integer> streaks = countStreaks(results);
 
 		for (Map.Entry<Integer, Integer> entry : streaks.entrySet()) {
-			System.out.println("Number of occurences of length [" + entry.getKey() + "]: " + entry.getValue());
+			System.out.format("Number of occurences of length %2d: %5d\n", entry.getKey(), entry.getValue());
 		}
 	}
 
-	private static void dumpStreakElements(List<Color> results, final Streak streak) {
-		final int start = streak.getStartPosition();
-		final int length = streak.getLength();
-		for (int i = start; i < start + length; i++) {
-			System.out.println(i + ": " + results.get(i));
-		}
-	}
+	private static Map<Integer, Integer> countStreaks(List<Color> results) {
 
-	private static int countOccurencesOfLength(List<Color> results, int length) {
-		int count = 0;
+		Map<Integer, Integer> streaks = new HashMap<Integer, Integer>(results.size());
 
-		int currentCount = 1;
-		Color lastColor = null;
+		Color previousResult = results.get(0);
+		int currentStreakLength = 1;
+		for (int i = 1; i < results.size(); i++) {
 
-		for (Color result : results) {
+			Color result = results.get(i);
 
-			if (lastColor == result) {
-				currentCount++;
+			if (result == previousResult) {
+				currentStreakLength++;
 			}
-			else if (lastColor != null) {
-				// streak broken - does the length match our input?
-				if (currentCount == length) {
-					count++;
-				}
-
-				// reset
-				currentCount = 1;
-			}
-
-			lastColor = result;
-		}
-
-		return count;
-	}
-
-	private static Streak findLongestStreak(List<Color> results) {
-		Streak longest = new Streak(0, 0);
-
-		Color lastColor = null;
-		int currentStreak = 1;
-
-		for (int i = 0; i < results.size(); i++) {
-
-			final Color result = results.get(i);
-
-			log.debug("findLongestStreak: at index [" + i + "] result [" + result + "]");
-
-			if (lastColor == result) {
-				currentStreak++;
-				log.debug("findLongestStreak: count of currentStreak at [" + currentStreak + "]");
-			}
-			else if (lastColor != null) {
+			else {
 				// streak broken
-				log.debug("findLongestStreak: streak broken");
-
-				if (currentStreak > longest.getLength()) {
-					int start = i - currentStreak;
-					log.debug("findLongestStreak: new max of [" + currentStreak + "] found, started at " + start);
-					longest = new Streak(currentStreak, start);
-				}
+				incrementStreakCount(streaks, currentStreakLength);
 
 				// reset
-				currentStreak = 1;
+				currentStreakLength = 1;
 			}
 
-			lastColor = result;
+			previousResult = result;
 		}
 
-		return longest;
+		return streaks;
+
 	}
 
-	private static class Streak {
-
-		private int length;
-
-		private int startPosition;
-
-		public Streak(int length, int start) {
-			this.length = length;
-			this.startPosition = start;
+	private static void incrementStreakCount(Map<Integer, Integer> streaks, int streakLength) {
+		final Integer key = Integer.valueOf(streakLength);
+		if (!streaks.containsKey(key)) {
+			streaks.put(key, 0);
 		}
-
-		public int getLength() {
-			return length;
-		}
-
-		public int getStartPosition() {
-			return startPosition;
-		}
-
-		@Override
-		public String toString() {
-			return "Length: " + length + ", startPosition: " + startPosition;
-		}
+		streaks.put(key, streaks.get(streakLength) + 1);
 	}
 }
