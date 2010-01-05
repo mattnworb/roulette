@@ -132,9 +132,13 @@ public class Roulette {
 		System.out.printf("Spun wheel %d times (took %dms)\n\n", testRuns, stopWatch.getElapsedTime());
 
 		for (Color col : Color.values()) {
-			Integer count = colorCount.get(col);
-			float colorPct = (float) wheel.getNumOfSlots(col) / wheel.getSlots();
-			System.out.printf("%5s: %5d times (expected %7.3f)\n", col, count, colorPct * results.size());
+			final Integer count = colorCount.get(col);
+			final float colorPct = (float) wheel.getNumOfSlots(col) / wheel.getSlots();
+			final float expected = colorPct * results.size();
+			final float diff = Math.abs(expected - count.intValue());
+			final float diffPct = diff / expected;
+			System.out.printf("%-5s: %d times (expected %.3f, off by %.3f or %f%%)\n", col, count, expected, diff,
+				diffPct);
 		}
 		System.out.println();
 
