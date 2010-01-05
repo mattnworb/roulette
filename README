@@ -1,0 +1,10 @@
+nA simple class which spins a roulette wheel a configurable amount of times, 
+prints the results, and counts the number of streaks in the results.
+
+To compile:
+	mvn compile
+	
+To run:
+	mvn exec:java -Dexec.mainClass=brown.roulette.Roulette -Dexec.args=<SPINS>
+	
+	where <SPINS> is a valid integer (i.e. less than 2147483647)
