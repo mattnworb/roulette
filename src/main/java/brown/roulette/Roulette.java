@@ -1,6 +1,7 @@
 package brown.roulette;
 
 import java.io.PrintStream;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,6 +59,11 @@ public class Roulette {
 		Arrays.fill(wheel, numBlack + numRed, wheel.length, Color.GREEN);
 	}
 
+	public Roulette(int numBlack, int numRed, int numGreen, Random random) {
+		this(numBlack, numRed, numGreen);
+		this.rand = random;
+	}
+
 	public int getNumOfSlots(Color c) {
 		switch (c) {
 			case BLACK:
@@ -93,7 +99,6 @@ public class Roulette {
 	private final static int NUM_GREEN = 2;
 
 	public static void main(String[] args) {
-		Roulette wheel = new Roulette(NUM_BLACK, NUM_RED, NUM_GREEN);
 
 		int testRuns = 1000;
 		if (args.length > 0) {
@@ -103,8 +108,17 @@ public class Roulette {
 			catch (NumberFormatException e) {
 				System.err.println("Not a valid input for number of attempts: " + args[0]);
 			}
+
 		}
 
+		System.out.println("Tests using java.util.Random:\n");
+		run(testRuns, new Roulette(NUM_BLACK, NUM_RED, NUM_GREEN));
+
+		System.out.println("\n\nTests using java.security.SecureRandom:\n");
+		run(testRuns, new Roulette(NUM_BLACK, NUM_RED, NUM_GREEN, new SecureRandom()));
+	}
+
+	private static void run(int testRuns, Roulette wheel) {
 		List<Color> results = spinWheel(wheel, testRuns);
 
 		countAndPrintStreaks(results);
